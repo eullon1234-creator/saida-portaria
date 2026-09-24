@@ -1,4 +1,4 @@
-import { Truck, History, Database, Users, PlusCircle, CheckCircle2, CloudOff } from 'lucide-react';
+import { Truck, History, Database, Users, PlusCircle, CheckCircle2, CloudOff, Download, Smartphone } from 'lucide-react';
 import { isUsingFirebase } from '../firebase';
 import logoGel from '../assets/logo-gel.png';
 
@@ -6,6 +6,7 @@ export default function Header({
   onOpenHistory, 
   onOpenVehicles, 
   onOpenFirebase, 
+  onOpenInstall,
   onNewRomaneio,
   romaneiosCount = 0 
 }) {
@@ -48,13 +49,25 @@ export default function Header({
 
         {/* Botões de Ação Rápida */}
         <div className="flex items-center gap-2 flex-wrap ml-auto">
+          {/* Botão Baixar / Instalar App */}
+          <button
+            onClick={onOpenInstall}
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 transition active:scale-95 shadow-md border border-amber-300 animate-pulse hover:animate-none cursor-pointer"
+            title="Baixar e Instalar Aplicativo no Celular ou Tablet"
+          >
+            <Download className="w-4 h-4 stroke-[2.5]" />
+            <span className="hidden sm:inline">Baixar App</span>
+            <span className="sm:hidden">App</span>
+          </button>
+
           <button
             onClick={onNewRomaneio}
             type="button"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition active:scale-95 shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95 shadow-sm"
             title="Limpar formulário e iniciar nova saída"
           >
-            <PlusCircle className="w-4 h-4" />
+            <PlusCircle className="w-4 h-4 text-amber-400" />
             <span>Nova Saída</span>
           </button>
 

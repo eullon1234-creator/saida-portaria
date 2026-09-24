@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import OrigemSelector from './components/OrigemSelector';
 import RomaneioForm from './components/RomaneioForm';
@@ -6,6 +5,7 @@ import PrintModal from './components/PrintModal';
 import HistoryModal from './components/HistoryModal';
 import VeiculosModal from './components/VeiculosModal';
 import FirebaseModal from './components/FirebaseModal';
+import InstallPromptModal from './components/InstallPromptModal';
 import { 
   getAllVehiclesDrivers, 
   getAllRomaneios, 
@@ -14,7 +14,7 @@ import {
   isUsingFirebase 
 } from './firebase';
 import { generateRomaneioNumber } from './utils/plateUtils';
-import { ShieldCheck, HardHat, FileSpreadsheet, Sparkles } from 'lucide-react';
+import { ShieldCheck, HardHat, FileSpreadsheet, Sparkles, Download, Smartphone, X } from 'lucide-react';
 
 function getNowLocalDateTime() {
   const now = new Date();
@@ -32,8 +32,41 @@ export default function App() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isVehiclesModalOpen, setIsVehiclesModalOpen] = useState(false);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
-  
-  const [selectedRomaneioToPrint, setSelectedRomaneioToPrint] = useState(null);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [showMobileInstallBanner, setShowMobileInstallBanner] = useState(true);
+
+  // PWA Prompt
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    // Detecta se já está instalado
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+      setIsInstalled(true);
+      setShowMobileInstallBanner(false);
+    }
+
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      console.log('📱 PWA beforeinstallprompt capturado!');
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+      setShowMobileInstallBanner(false);
+      console.log('🎉 Aplicativo Portaria GEL instalado com sucesso!');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
 
   // Estado do Formulário Principal
   const [formData, setFormData] = useState({
@@ -144,9 +177,36 @@ export default function App() {
         onOpenHistory={() => setIsHistoryModalOpen(true)}
         onOpenVehicles={() => setIsVehiclesModalOpen(true)}
         onOpenFirebase={() => setIsFirebaseModalOpen(true)}
+        onOpenInstall={() => setIsInstallModalOpen(true)}
         onNewRomaneio={handleResetForm}
         romaneiosCount={romaneiosList.length}
       />
+
+      {/* Banner de Instalação para Celular e Tablet */}
+      {!isInstalled && showMobileInstallBanner && (
+        <div className="no-print bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-3 sm:px-6 py-2.5 shadow-md flex items-center justify-between gap-3 border-b-2 border-amber-600">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-black">
+            <Smartphone className="w-5 h-5 shrink-0 text-slate-900 animate-bounce" />
+            <span>Instale o aplicativo na tela do seu celular ou tablet para uso rápido na portaria!</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setIsInstallModalOpen(true)}
+              className="px-3.5 py-1.5 bg-slate-950 text-white hover:bg-slate-900 rounded-xl text-xs font-black transition active:scale-95 shadow flex items-center gap-1.5 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-amber-400" />
+              <span>Baixar App</span>
+            </button>
+            <button
+              onClick={() => setShowMobileInstallBanner(false)}
+              className="p-1 hover:bg-black/10 rounded-lg text-slate-950 cursor-pointer"
+              title="Dispensar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Conteúdo Principal */}
       <main className="no-print flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
@@ -226,6 +286,14 @@ export default function App() {
       <FirebaseModal
         isOpen={isFirebaseModalOpen}
         onClose={() => setIsFirebaseModalOpen(false)}
+      />
+
+      {/* MODAL DE INSTALAÇÃO DO APLICATIVO */}
+      <InstallPromptModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        deferredPrompt={deferredPrompt}
+        onInstallSuccess={() => setIsInstalled(true)}
       />
 
       {/* Rodapé institucional */}

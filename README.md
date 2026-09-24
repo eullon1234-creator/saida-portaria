@@ -1,13 +1,36 @@
 # Controle de Saída de Materiais e Emissão de Romaneio - GEL Engenharia
 
-Aplicação web moderna, responsiva e de alta legibilidade desenvolvida para o controle de portaria e expedição de cargas nos canteiros de obras da **GEL - Goetze Lobato Engenharia S.A.** (**UHE Estrela** e **PCH Taboca**).
+Aplicação web e PWA moderna, responsiva e de alta legibilidade desenvolvida para o controle de portaria e expedição de cargas nos canteiros de obras da **GEL - Goetze Lobato Engenharia S.A.** (**UHE Estrela** e **PCH Taboca**).
 
 ---
 
-## 🌐 Acesso Online (GitHub Pages)
+## 🌐 Acesso Online & Instalação do Aplicativo
 
 - 🔗 **Link de Acesso Direto**: **[https://eullon1234-creator.github.io/saida-portaria/](https://eullon1234-creator.github.io/saida-portaria/)**
 - 📦 **Repositório GitHub**: **[https://github.com/eullon1234-creator/saida-portaria](https://github.com/eullon1234-creator/saida-portaria)**
+
+---
+
+## 📲 Como Baixar e Instalar o Aplicativo no Celular e Tablet
+
+A aplicação foi desenvolvida no padrão **PWA (Progressive Web App)**, permitindo ser instalada diretamente na tela do seu dispositivo sem precisar de loja (Google Play / App Store) e com carregamento instantâneo:
+
+### 🤖 No Celular ou Tablet Android (Chrome, Samsung Internet, Edge):
+1. Abra o link **[https://eullon1234-creator.github.io/saida-portaria/](https://eullon1234-creator.github.io/saida-portaria/)**.
+2. Toque no botão destacado **"📲 Baixar App"** na barra superior ou no aviso inferior.
+3. Toque em **"Instalar Agora no Meu Dispositivo"** e confirme.
+4. O ícone oficial da **Portaria GEL** será adicionado à sua tela de início e gaveta de aplicativos.
+
+### 🍎 No iPhone ou iPad (Safari):
+1. Abra o link no navegador **Safari**.
+2. Toque no botão de **Compartilhar** (ícone de quadrado com a seta para cima na barra inferior).
+3. Role para baixo e selecione **"Adicionar à Tela de Início"** (ícone de quadrado com o sinal +).
+4. Toque em **"Adicionar"** no canto superior direito.
+
+### 💻 No Computador (Google Chrome / Edge):
+1. Acesse o link no Chrome ou Edge.
+2. Clique no ícone de download/instalação no canto direito da barra de endereços (ou no botão **"Baixar App"**).
+3. O app abrirá em uma janela exclusiva, limpa e sem barras de navegação.
 
 ---
 
@@ -49,10 +72,6 @@ npm install
 npm run dev -- --host
 ```
 
-Acesse no navegador:
-- No computador: [http://localhost:5173](http://localhost:5173)
-- No celular ou tablet na mesma rede: `http://<IP_DO_PC>:5173`
-
 ---
 
 ## 🚀 Como Publicar / Atualizar no GitHub Pages
@@ -62,13 +81,3 @@ Para atualizar a versão publicada no GitHub Pages:
 npm run deploy
 ```
 *(Ou envie um push para a branch `main` e o GitHub Actions fará o build e deploy automaticamente).*
-
----
-
-## 🖨️ Dica para Impressão Perfeita em PDF ou Papel
-Ao clicar em **"Imprimir / Salvar PDF"**:
-1. Destino: Selecione a impressora da portaria ou "Salvar como PDF".
-2. Layout: **Retrato (Portrait)**.
-3. Margens: **Padrão ou Mínimas**.
-4. Gráficos de segundo plano: **Marcado** (para imprimir a logo e bordas com fidelidade).
-As duas vias sairão perfeitamente diagramadas na mesma folha A4 com a linha de corte ao meio!
