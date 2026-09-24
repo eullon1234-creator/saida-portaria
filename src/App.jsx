@@ -35,6 +35,7 @@ export default function App() {
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [showMobileInstallBanner, setShowMobileInstallBanner] = useState(true);
+  const [selectedRomaneioToPrint, setSelectedRomaneioToPrint] = useState(null);
 
   // PWA Prompt
   const [deferredPrompt, setDeferredPrompt] = useState(null);
