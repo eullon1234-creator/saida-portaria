@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-100 text-slate-900;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Customizações de Alto Contraste para Uso sob Sol / Canteiro de Obras */
+.outdoor-contrast-input {
+  @apply bg-white border-2 border-slate-300 text-slate-900 font-medium placeholder-slate-400 focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition-all rounded-xl shadow-sm text-base;
+}
+
+.outdoor-contrast-input:focus {
+  outline: none;
+}
+
+/* Placa padrão Mercosul e Tradicional */
+.placa-badge {
+  font-family: 'JetBrains Mono', monospace, sans-serif;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+}
+
+/* Configurações Avançadas de Impressão (2 VIAS EM 1 FOLHA A4) */
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Oculta tudo que não faz parte da impressão */
+  .no-print, header, nav, .screen-only {
+    display: none !important;
+  }
+
+  /* Exibe o container de impressão */
+  .print-only-container {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    height: 295mm !important;
+    margin: 0 !important;
+    padding: 4mm 6mm !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 3mm 4mm;
+  }
+}
+
+@media screen {
+  .print-only-container {
+    display: block;
+  }
+}
