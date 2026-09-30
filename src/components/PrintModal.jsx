@@ -6,6 +6,8 @@ import logoGel from '../assets/logo-gel.png';
 export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
   if (!romaneio) return null;
 
+  const isBlank = Boolean(romaneio.isBlank);
+
   const handlePrint = () => {
     window.print();
   };
@@ -56,7 +58,7 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
             {/* Número e Via */}
             <div className="text-right">
               <div className="inline-block bg-slate-900 text-white font-mono font-black text-xs sm:text-sm px-2.5 py-1 rounded">
-                Nº {romaneio.numero_romaneio}
+                {isBlank ? 'Nº ________________' : `Nº ${romaneio.numero_romaneio}`}
               </div>
               <div className="text-[10px] font-black uppercase text-amber-700 tracking-wider mt-0.5">
                 {viaLabel}
@@ -75,7 +77,11 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
               </span>
             </div>
             <div className="font-bold text-slate-800 text-[11px]">
-              DATA/HORA: <span className="font-black">{formatDate(romaneio.data_hora)}</span>
+              {isBlank ? (
+                <span>DATA: _____/_____/_________ &nbsp;&nbsp; HORA: _____:_____</span>
+              ) : (
+                <span>DATA/HORA: <span className="font-black">{formatDate(romaneio.data_hora)}</span></span>
+              )}
             </div>
           </div>
         </div>
@@ -84,30 +90,46 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
         <div className="grid grid-cols-4 gap-2 text-xs border border-slate-300 rounded p-2 mb-2 bg-slate-50/50">
           <div className="col-span-2">
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Motorista:</span>
-            <span className="font-black text-slate-900 uppercase text-xs sm:text-sm block truncate">
-              {romaneio.motorista || '---'}
-            </span>
+            {isBlank ? (
+              <span className="border-b border-slate-400 block h-5 mt-0.5"></span>
+            ) : (
+              <span className="font-black text-slate-900 uppercase text-xs sm:text-sm block truncate">
+                {romaneio.motorista || '---'}
+              </span>
+            )}
           </div>
 
           <div className="col-span-1">
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Placa:</span>
-            <span className="font-mono font-black text-xs sm:text-sm text-slate-950 uppercase bg-amber-200/80 px-1.5 py-0.5 rounded border border-amber-400 inline-block">
-              {formatPlate(romaneio.placa) || '---'}
-            </span>
+            {isBlank ? (
+              <span className="border border-slate-400 rounded block h-6 mt-0.5 bg-white"></span>
+            ) : (
+              <span className="font-mono font-black text-xs sm:text-sm text-slate-950 uppercase bg-amber-200/80 px-1.5 py-0.5 rounded border border-amber-400 inline-block">
+                {formatPlate(romaneio.placa) || '---'}
+              </span>
+            )}
           </div>
 
           <div className="col-span-1">
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Transportadora:</span>
-            <span className="font-bold text-slate-800 uppercase text-xs block truncate">
-              {romaneio.empresa || 'PRÓPRIA / GEL'}
-            </span>
+            {isBlank ? (
+              <span className="border-b border-slate-400 block h-5 mt-0.5"></span>
+            ) : (
+              <span className="font-bold text-slate-800 uppercase text-xs block truncate">
+                {romaneio.empresa || 'PRÓPRIA / GEL'}
+              </span>
+            )}
           </div>
 
-          <div className="col-span-4 border-t border-slate-200 pt-1 mt-0.5">
+          <div className="col-span-4 border-t border-slate-200 pt-1 mt-0.5 flex items-center gap-2">
             <span className="text-[10px] font-bold text-slate-500 uppercase inline mr-1">Destino:</span>
-            <span className="font-black text-slate-900 uppercase text-xs">
-              {romaneio.destino || '---'}
-            </span>
+            {isBlank ? (
+              <span className="border-b border-slate-400 flex-1 block h-4"></span>
+            ) : (
+              <span className="font-black text-slate-900 uppercase text-xs">
+                {romaneio.destino || '---'}
+              </span>
+            )}
           </div>
         </div>
 
@@ -124,41 +146,62 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
               </tr>
             </thead>
             <tbody>
-              {romaneio.itens?.map((it, idx) => (
-                <tr key={idx} className="border-b border-slate-300">
-                  <td className="border border-slate-300 px-1.5 py-0.5 text-center font-bold text-[11px] text-slate-600">
-                    {idx + 1}
-                  </td>
-                  <td className="border border-slate-300 px-2 py-0.5 font-bold uppercase text-[11px] text-slate-900">
-                    {it.material}
-                  </td>
-                  <td className="border border-slate-300 px-2 py-0.5 text-center font-black text-[11px] text-slate-950">
-                    {it.quantidade}
-                  </td>
-                  <td className="border border-slate-300 px-2 py-0.5 text-center font-bold uppercase text-[10px] text-slate-700">
-                    {it.unidade}
-                  </td>
-                  <td className="border border-slate-300 px-2 py-0.5 text-[10px] text-slate-600">
-                    {it.observacao || '-'}
-                  </td>
-                </tr>
-              ))}
-              {/* Linhas vazias para preenchimento se forem poucos itens */}
-              {romaneio.itens?.length < 3 && Array.from({ length: 3 - romaneio.itens.length }).map((_, i) => (
-                <tr key={`empty-${i}`} className="border-b border-slate-200 h-5">
-                  <td className="border border-slate-200 px-1 text-center text-slate-300 text-[10px]">{romaneio.itens.length + i + 1}</td>
-                  <td className="border border-slate-200"></td>
-                  <td className="border border-slate-200"></td>
-                  <td className="border border-slate-200"></td>
-                  <td className="border border-slate-200"></td>
-                </tr>
-              ))}
+              {isBlank ? (
+                Array.from({ length: 6 }).map((_, idx) => (
+                  <tr key={`blank-row-${idx}`} className="border-b border-slate-300 h-6">
+                    <td className="border border-slate-300 px-1.5 py-1 text-center font-bold text-[11px] text-slate-500 bg-slate-50">
+                      {idx + 1}
+                    </td>
+                    <td className="border border-slate-300 px-2 py-1"></td>
+                    <td className="border border-slate-300 px-2 py-1"></td>
+                    <td className="border border-slate-300 px-2 py-1"></td>
+                    <td className="border border-slate-300 px-2 py-1"></td>
+                  </tr>
+                ))
+              ) : (
+                <>
+                  {romaneio.itens?.map((it, idx) => (
+                    <tr key={idx} className="border-b border-slate-300">
+                      <td className="border border-slate-300 px-1.5 py-0.5 text-center font-bold text-[11px] text-slate-600">
+                        {idx + 1}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-0.5 font-bold uppercase text-[11px] text-slate-900">
+                        {it.material}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-0.5 text-center font-black text-[11px] text-slate-950">
+                        {it.quantidade}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-0.5 text-center font-bold uppercase text-[10px] text-slate-700">
+                        {it.unidade}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-0.5 text-[10px] text-slate-600">
+                        {it.observacao || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                  {/* Linhas vazias para preenchimento se forem poucos itens */}
+                  {romaneio.itens?.length < 3 && Array.from({ length: 3 - romaneio.itens.length }).map((_, i) => (
+                    <tr key={`empty-${i}`} className="border-b border-slate-200 h-5">
+                      <td className="border border-slate-200 px-1 text-center text-slate-300 text-[10px]">{romaneio.itens.length + i + 1}</td>
+                      <td className="border border-slate-200"></td>
+                      <td className="border border-slate-200"></td>
+                      <td className="border border-slate-200"></td>
+                      <td className="border border-slate-200"></td>
+                    </tr>
+                  ))}
+                </>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* OBSERVAÇÕES GERAIS DA LIBERAÇÃO */}
-        {romaneio.observacoes_gerais ? (
+        {isBlank ? (
+          <div className="text-[10px] text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-300 mb-2 flex items-center gap-2">
+            <span className="font-bold uppercase text-slate-900 shrink-0">Obs Geral:</span>
+            <span className="border-b border-slate-400 flex-1 block h-4"></span>
+          </div>
+        ) : romaneio.observacoes_gerais ? (
           <div className="text-[10px] text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-300 mb-2">
             <span className="font-bold uppercase text-slate-900">Obs Geral:</span> {romaneio.observacoes_gerais}
           </div>
@@ -185,15 +228,15 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
                 Assinatura do Motorista
               </div>
               <div className="text-[9px] text-slate-500 font-semibold truncate px-2">
-                {romaneio.motorista} ({formatPlate(romaneio.placa)})
+                {isBlank ? 'Nome Legível e Assinatura' : `${romaneio.motorista} (${formatPlate(romaneio.placa)})`}
               </div>
             </div>
           </div>
 
           <div className="mt-1 flex items-center justify-between text-[8px] text-slate-400 font-mono">
-            <span>GEL S.A. | Controle Portaria</span>
+            <span>GEL S.A. | Controle Almoxarifado & Portaria</span>
             <span className="uppercase font-bold text-slate-600">{viaSubtitle}</span>
-            <span>Emitido em: {formatDate(romaneio.criado_em || romaneio.data_hora)}</span>
+            <span>{isBlank ? 'Folha de preenchimento físico' : `Emitido em: ${formatDate(romaneio.criado_em || romaneio.data_hora)}`}</span>
           </div>
         </div>
       </div>
@@ -207,20 +250,26 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
         {/* Barra Superior do Modal (Não sai na impressão) */}
         <div className="no-print bg-slate-900 text-white p-3.5 sm:p-4 flex items-center justify-between border-b-4 border-amber-600">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-amber-500 text-slate-950 rounded-xl font-black">
-              <Printer className="w-5 h-5" />
+            <div className={`p-2 rounded-xl font-black ${isBlank ? 'bg-emerald-500 text-slate-950' : 'bg-amber-500 text-slate-950'}`}>
+              {isBlank ? <FileText className="w-5 h-5" /> : <Printer className="w-5 h-5" />}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-black tracking-tight">
-                  Romaneio Emitido com Sucesso!
+                  {isBlank ? 'Romaneio em Branco para Preenchimento Físico' : 'Romaneio Emitido com Sucesso!'}
                 </h3>
-                <span className="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-2 py-0.5 rounded border border-emerald-500/30">
-                  Salvo no Banco
+                <span className={`text-xs font-bold px-2 py-0.5 rounded border ${
+                  isBlank 
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                }`}>
+                  {isBlank ? 'Preenchimento Manual Físico (2 Vias A4)' : 'Salvo no Banco'}
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Visualização do documento pronto para impressão (2 vias em 1 folha A4 com logotipo GEL).
+                {isBlank 
+                  ? 'Folha pautada pronta para impressão (2 vias em 1 folha A4 com logotipo oficial GEL).' 
+                  : 'Visualização do documento pronto para impressão (2 vias em 1 folha A4 com logotipo GEL).'}
               </p>
             </div>
           </div>
@@ -248,20 +297,22 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
               className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-sm shadow-md transition active:scale-95 flex items-center gap-2 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Imprimir / Salvar PDF</span>
+              <span>Imprimir Folha A4</span>
             </button>
 
-            <button
-              onClick={() => {
-                onClose();
-                onNewRomaneio();
-              }}
-              type="button"
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>Nova Saída</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {!isBlank && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onNewRomaneio();
+                }}
+                type="button"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Nova Saída</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -272,7 +323,7 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
             
             {/* 1ª VIA - PORTARIA / OBRA */}
             <div className="flex-1 flex flex-col">
-              {renderSingleVia('1ª VIA - PORTARIA / CONTROLE INTERNO', 'Via 1: Arquivo da Portaria / Obra', true)}
+              {renderSingleVia('1ª VIA - ALMOXARIFADO / CONTROLE INTERNO', 'Via 1: Arquivo do Almoxarifado / Obra', true)}
             </div>
 
             {/* LINHA DE CORTE SERRILHADA ENTRE AS DUAS VIAS */}
@@ -296,7 +347,11 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
         {/* Rodapé do Modal */}
         <div className="no-print bg-slate-100 p-3 sm:px-6 flex items-center justify-between border-t border-slate-200">
           <span className="text-xs text-slate-500 font-medium">
-            Romaneio Nº <strong className="text-slate-900">{romaneio.numero_romaneio}</strong> • {romaneio.origem}
+            {isBlank ? (
+              <span>Modelo de Folha em Branco • <strong className="text-slate-900">{romaneio.origem}</strong></span>
+            ) : (
+              <span>Romaneio Nº <strong className="text-slate-900">{romaneio.numero_romaneio}</strong> • {romaneio.origem}</span>
+            )}
           </span>
           <button
             onClick={onClose}

@@ -15,7 +15,8 @@ import {
   Sparkles, 
   RotateCcw,
   Search,
-  Check
+  Check,
+  FileText
 } from 'lucide-react';
 import { formatPlate, cleanPlate, isValidPlate } from '../utils/plateUtils';
 
@@ -26,6 +27,7 @@ export default function RomaneioForm({
   setFormData,
   vehiclesList,
   onSaveAndPrint,
+  onPrintBlank,
   onResetForm
 }) {
   const [plateSuggestions, setPlateSuggestions] = useState([]);
@@ -584,20 +586,32 @@ export default function RomaneioForm({
           Pronto para conferência e emissão do romaneio
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap">
           <button
             type="button"
             onClick={onResetForm}
-            className="flex-1 sm:flex-none px-4 py-3.5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+            className="flex-1 sm:flex-none px-3.5 sm:px-4 py-3.5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Limpar campos do formulário"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Limpar</span>
           </button>
 
           <button
+            type="button"
+            onClick={onPrintBlank}
+            className="flex-1 sm:flex-none px-3.5 sm:px-4 py-3.5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Imprimir folha de romaneio em branco (2 vias) para preencher manualmente com caneta"
+          >
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Imprimir em Branco</span>
+            <span className="sm:hidden">Em Branco</span>
+          </button>
+
+          <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-2 sm:flex-none px-8 py-3.5 rounded-xl font-black text-base sm:text-lg bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-xl font-black text-base sm:text-lg bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50"
           >
             <Printer className="w-5 h-5 stroke-[2.5]" />
             <span>{isSubmitting ? 'Gravando...' : 'Salvar e Emitir Romaneio'}</span>

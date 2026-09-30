@@ -165,6 +165,24 @@ export default function App() {
     }
   };
 
+  // Imprimir Romaneio em Branco para preenchimento físico
+  const handlePrintBlank = () => {
+    setSelectedRomaneioToPrint({
+      isBlank: true,
+      origem: origem,
+      numero_romaneio: '',
+      data_hora: '',
+      motorista: '',
+      placa: '',
+      empresa: 'GEL Engenharia',
+      destino: '',
+      itens: [],
+      observacoes_gerais: '',
+      conferente_portaria: 'Almoxarifado'
+    });
+    setIsPrintModalOpen(true);
+  };
+
   // Excluir romaneio
   const handleDeleteRomaneio = async (id) => {
     await deleteRomaneioById(id);
@@ -180,6 +198,7 @@ export default function App() {
         onOpenVehicles={() => setIsVehiclesModalOpen(true)}
         onOpenFirebase={() => setIsFirebaseModalOpen(true)}
         onOpenInstall={() => setIsInstallModalOpen(true)}
+        onPrintBlank={handlePrintBlank}
         onNewRomaneio={handleResetForm}
         romaneiosCount={romaneiosList.length}
       />
@@ -248,6 +267,7 @@ export default function App() {
           setFormData={setFormData}
           vehiclesList={vehiclesList}
           onSaveAndPrint={handleSaveAndPrint}
+          onPrintBlank={handlePrintBlank}
           onResetForm={handleResetForm}
         />
       </main>

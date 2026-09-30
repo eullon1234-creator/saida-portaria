@@ -1,4 +1,4 @@
-import { Truck, History, Database, Users, PlusCircle, CheckCircle2, CloudOff, Download, Smartphone } from 'lucide-react';
+import { Truck, History, Database, Users, PlusCircle, CheckCircle2, CloudOff, Download, Smartphone, FileText } from 'lucide-react';
 import { isUsingFirebase } from '../firebase';
 import logoGel from '../assets/logo-gel.png';
 
@@ -7,6 +7,7 @@ export default function Header({
   onOpenVehicles, 
   onOpenFirebase, 
   onOpenInstall,
+  onPrintBlank,
   onNewRomaneio,
   romaneiosCount = 0 
 }) {
@@ -59,6 +60,18 @@ export default function Header({
             <Download className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden sm:inline">Baixar App</span>
             <span className="sm:hidden">App</span>
+          </button>
+
+          {/* Botão Imprimir em Branco */}
+          <button
+            onClick={onPrintBlank}
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 transition active:scale-95 shadow-sm cursor-pointer"
+            title="Imprimir folha de romaneio em branco (2 vias na folha A4 com logo GEL) para preenchimento físico com caneta"
+          >
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Imprimir em Branco</span>
+            <span className="sm:hidden">Em Branco</span>
           </button>
 
           <button
