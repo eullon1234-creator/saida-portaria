@@ -42,6 +42,8 @@ export default function VoiceAssistantModal({
   const [savedKey, setSavedKey] = useState(getSavedGeminiKey() || '');
 
   const recognitionRef = useRef(null);
+  const isUserListeningRef = useRef(false);
+  const restartTimeoutRef = useRef(null);
 
   // Inicializa o Reconhecimento de Fala Nativo
   useEffect(() => {
@@ -85,15 +87,37 @@ export default function VoiceAssistantModal({
     };
 
     recognition.onerror = (event) => {
-      console.warn('Erro de reconhecimento de voz:', event.error);
-      if (event.error === 'not-allowed') {
-        setErrorMessage('Permissão de microfone negada. Permita o microfone no navegador.');
+      console.warn('Evento de microfone:', event.error);
+      // 'no-speech' é disparado no celular sempre que o usuário faz uma pausa natural
+      if (event.error === 'no-speech') {
+        return; // Não para a gravação, o onend reiniciará se isUserListeningRef for true
       }
-      setIsRecording(false);
+      if (event.error === 'not-allowed') {
+        isUserListeningRef.current = false;
+        setErrorMessage('Permissão de microfone negada. Permita o microfone no navegador.');
+        setIsRecording(false);
+      }
     };
 
     recognition.onend = () => {
-      setIsRecording(false);
+      // No celular/tablet, o navegador encerra ao detectar 1-2s de silêncio.
+      // Se o usuário não clicou para parar, reiniciamos automaticamente!
+      if (isUserListeningRef.current) {
+        if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = setTimeout(() => {
+          if (isUserListeningRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+              setIsRecording(true);
+            } catch (e) {
+              // Engine ainda finalizando, tenta novamente em breve
+              console.log('Reconectando microfone mobile...');
+            }
+          }
+        }, 150);
+      } else {
+        setIsRecording(false);
+      }
     };
 
     recognitionRef.current = recognition;
@@ -102,6 +126,8 @@ export default function VoiceAssistantModal({
     startRecording();
 
     return () => {
+      isUserListeningRef.current = false;
+      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch {}
       }
@@ -110,17 +136,24 @@ export default function VoiceAssistantModal({
 
   const startRecording = () => {
     setErrorMessage('');
+    isUserListeningRef.current = true;
+    if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+
     if (recognitionRef.current) {
       try {
         recognitionRef.current.start();
         setIsRecording(true);
       } catch (e) {
         // Já iniciado
+        setIsRecording(true);
       }
     }
   };
 
   const stopRecording = () => {
+    isUserListeningRef.current = false;
+    if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -295,11 +328,16 @@ export default function VoiceAssistantModal({
 
               <div className="mt-3">
                 <span className={`text-xs font-black uppercase tracking-wider ${isRecording ? 'text-rose-600' : 'text-slate-600'}`}>
-                  {isRecording ? '● Gravando sua voz... Fale normalmente' : 'Microfone Pausado (Toque para falar)'}
+                  {isRecording ? '● Gravando... Pode falar e pausar livremente!' : 'Microfone Pausado (Toque para falar)'}
                 </span>
                 <p className="text-[11px] text-slate-500 mt-0.5 max-w-sm">
-                  Ex: <em>"Caminhão da GEL, motorista Carlos Eduardo, placa BRA2E19, destino Barragem, levando 50 sacos de cimento e 10 barras de ferro."</em>
+                  Ex: <em>"Eduardo Francisco placa ABC1D31 tá levando 3 sacos de cimento."</em>
                 </p>
+                {isRecording && (
+                  <p className="text-[10px] text-amber-800 font-bold mt-1 bg-amber-100 px-2.5 py-0.5 rounded-full inline-block border border-amber-300">
+                    💡 Modo contínuo: pode pausar para pensar ou olhar a carga que ele continua escutando!
+                  </p>
+                )}
               </div>
 
               {/* Caixa de Texto da Transcrição em Tempo Real / Editável */}
