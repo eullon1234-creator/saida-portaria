@@ -359,6 +359,7 @@ export default function App() {
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
         currentOrigem={origem}
+        vehiclesList={vehiclesList}
         onApplyVoiceData={handleApplyVoiceData}
       />
 

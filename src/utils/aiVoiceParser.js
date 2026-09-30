@@ -1,5 +1,5 @@
 // Utilitário de Inteligência Artificial para Processamento de Voz e Extração Estruturada de Romaneios
-import { cleanPlate, formatPlate } from './plateUtils';
+import { formatPlate } from './plateUtils';
 
 const GEMINI_STORAGE_KEY = 'gel_portaria_gemini_api_key';
 
@@ -27,13 +27,60 @@ export function saveGeminiKey(key) {
   }
 }
 
+// Dicionário de números falados em português
+const PORTUGUESE_NUMBERS = {
+  'zero': 0, 'um': 1, 'uma': 1, 'hum': 1,
+  'dois': 2, 'duas': 2,
+  'três': 3, 'tres': 3,
+  'quatro': 4,
+  'cinco': 5,
+  'seis': 6, 'meia': 6,
+  'sete': 7,
+  'oito': 8,
+  'nove': 9,
+  'dez': 10,
+  'onze': 11, 'doze': 12, 'treze': 13, 'quatorze': 14, 'catorze': 14, 'quinze': 15,
+  'dezesseis': 16, 'dezeseis': 16, 'dezessete': 17, 'dezesete': 17, 'dezoito': 18, 'dezenove': 19,
+  'vinte': 20, 'trinta': 30, 'quarenta': 40, 'cinquenta': 50,
+  'sessenta': 60, 'setenta': 70, 'oitenta': 80, 'noventa': 90,
+  'cem': 100, 'cento': 100, 'duzentos': 200, 'trezentos': 300, 'quinhentos': 500, 'mil': 1000
+};
+
 /**
- * Parser Local Inteligente (Offline First - funciona sem chave de API)
- * Utiliza Expressões Regulares avançadas para capturar placa, motorista, destino e materiais falados em português.
+ * Normaliza números por extenso em português para dígitos numéricos
  */
-export function parseSpokenTextLocally(text) {
-  if (!text) return null;
-  const raw = text.toLowerCase();
+export function normalizeNumbersInText(text) {
+  if (!text) return '';
+  let res = text;
+  
+  // Trata números compostos (ex: "vinte e três" -> "23", "trinta e cinco" -> "35")
+  const tens = ['vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  const units = ['um', 'uma', 'dois', 'duas', 'três', 'tres', 'quatro', 'cinco', 'seis', 'meia', 'sete', 'oito', 'nove'];
+  
+  for (const t of tens) {
+    for (const u of units) {
+      const reg = new RegExp(`\\b${t}\\s+e\\s+${u}\\b`, 'gi');
+      const val = PORTUGUESE_NUMBERS[t] + PORTUGUESE_NUMBERS[u];
+      res = res.replace(reg, String(val));
+    }
+  }
+
+  // Trata números simples
+  for (const [word, val] of Object.entries(PORTUGUESE_NUMBERS)) {
+    const reg = new RegExp(`\\b${word}\\b`, 'gi');
+    res = res.replace(reg, String(val));
+  }
+
+  return res;
+}
+
+/**
+ * Parser Local Inteligente de Alta Precisão (Offline First)
+ * Extrai placa, motorista, destino e lista de materiais sem depender de conexão externa.
+ */
+export function parseSpokenTextLocally(text, knownVehicles = []) {
+  if (!text || !text.trim()) return null;
+
   const result = {
     origem: null,
     motorista: '',
@@ -44,74 +91,157 @@ export function parseSpokenTextLocally(text) {
     observacoes_gerais: ''
   };
 
+  let working = ' ' + text.trim() + ' ';
+  const phrasesToRemove = [];
+
   // 1. Origem (UHE Estrela ou PCH Taboca)
-  if (raw.includes('estrela') || raw.includes('uhe')) {
+  if (/uhe\s*estrela|estrela/i.test(working)) {
     result.origem = 'UHE Estrela';
-  } else if (raw.includes('taboca') || raw.includes('pch')) {
+    const m = working.match(/\b(?:uhe\s*estrela|canteiro\s*estrela|estrela)\b/i);
+    if (m) phrasesToRemove.push(m[0]);
+  } else if (/pch\s*taboca|taboca/i.test(working)) {
     result.origem = 'PCH Taboca';
+    const m = working.match(/\b(?:pch\s*taboca|canteiro\s*taboca|taboca)\b/i);
+    if (m) phrasesToRemove.push(m[0]);
   }
 
-  // 2. Placa do Veículo
-  // Trata falas como "placa bra 2 e 19", "placa abc 1234", "bê érre á dois é dezenove", etc.
-  let plateCandidate = '';
-  const plateMatch = text.match(/placa\s*:?\s*([a-zA-Z0-9\s-]{7,10})/i);
+  // 2. Empresa / Transportadora
+  if (/gel\s+engenharia|\bgel\b|propria|própria/i.test(working)) {
+    result.empresa = 'GEL Engenharia';
+    const m = working.match(/\b(?:empresa|transportadora)?\s*(?:gel\s+engenharia|\bgel\b|propria|própria)\b/i);
+    if (m) phrasesToRemove.push(m[0]);
+  }
+
+  // 3. Local de Destino
+  const destMatch = working.match(/\b(?:destino|indo\s+para|para\s+o|para\s+a|com\s+destino\s+a)\s+([a-zA-ZÀ-ÿ0-9\s-]{3,30}?)(?=\s*(?:,|\blevando\b|\bplaca\b|\bmotorista\b|\bcom\s+carga\b|$))/i);
+  if (destMatch) {
+    result.destino = destMatch[1].trim().replace(/\b\w/g, c => c.toUpperCase());
+    phrasesToRemove.push(destMatch[0]);
+  }
+
+  // 4. Placa do Veículo
+  // Captura após a palavra "placa", "veículo" ou padrão isolado
+  const plateMatch = working.match(/\b(?:placa|veículo|veiculo|caminhão|caminhao|saiu\s+na\s+placa|na\s+placa)\s*:?\s*([A-Za-z0-9\s-]{6,25})(?=\s*(?:,|\btá\b|\bta\b|\besta\b|\bestá\b|\blevando\b|\bcom\b|\bvai\b|\bmotorista\b|\bdestino\b|$))/i);
+  let rawPlateCandidate = '';
+  
   if (plateMatch) {
-    plateCandidate = plateMatch[1].replace(/[^a-zA-Z0-9]/g, '').slice(0, 7);
+    phrasesToRemove.push(plateMatch[0]);
+    rawPlateCandidate = plateMatch[1];
   } else {
-    // Busca padrão genérico de 3 letras e 4 números/letras (ex: BRA2E19 ou ABC1234)
-    const genericPlateMatch = text.match(/\b([a-zA-Z]{3}\s*[-]?\s*[0-9]\s*[a-zA-Z0-9]\s*[0-9]{2})\b/);
-    if (genericPlateMatch) {
-      plateCandidate = genericPlateMatch[1].replace(/[^a-zA-Z0-9]/g, '').slice(0, 7);
+    // Procura por padrão estrito Mercosul (ex: BRA2E19) ou Antigo (ex: ABC1234)
+    const strictPlate = working.match(/\b([A-Za-z]{3}\s*[\d]\s*[A-Za-z0-9]\s*[\d]{2,3})\b/);
+    if (strictPlate) {
+      phrasesToRemove.push(strictPlate[0]);
+      rawPlateCandidate = strictPlate[1];
     }
   }
 
-  if (plateCandidate.length >= 7) {
-    result.placa = formatPlate(plateCandidate);
+  if (rawPlateCandidate) {
+    let p = rawPlateCandidate.toUpperCase()
+      .replace(/\b(UM|UMA)\b/g, '1')
+      .replace(/\b(DOIS|DUAS)\b/g, '2')
+      .replace(/\b(TRES|TRÊS)\b/g, '3')
+      .replace(/\b(QUATRO)\b/g, '4')
+      .replace(/\b(CINCO)\b/g, '5')
+      .replace(/\b(SEIS|MEIA)\b/g, '6')
+      .replace(/\b(SETE)\b/g, '7')
+      .replace(/\b(OITO)\b/g, '8')
+      .replace(/\b(NOVE)\b/g, '9')
+      .replace(/\b(ZERO)\b/g, '0')
+      .replace(/\b(DE|DÊ)\b/g, 'D')
+      .replace(/[^A-Z0-9]/g, '');
+
+    if (/^[A-Z]{3}/.test(p)) {
+      // Padrão Mercosul: 3 letras + 1 dígito + 1 letra + 2 dígitos (ex: ABC1D31)
+      const mercMatch = p.match(/^([A-Z]{3})(\d)([A-Z])(\d{2})/);
+      if (mercMatch) {
+        result.placa = `${mercMatch[1]}${mercMatch[2]}${mercMatch[3]}${mercMatch[4]}`;
+      } else {
+        // Padrão Antigo: 3 letras + 4 dígitos (ex: ABC1234)
+        const antMatch = p.match(/^([A-Z]{3})(\d{4})/);
+        if (antMatch) {
+          result.placa = `${antMatch[1]}-${antMatch[2]}`;
+        } else if (p.length >= 7) {
+          result.placa = formatPlate(p.slice(0, 7));
+        }
+      }
+    }
   }
 
-  // 3. Motorista
-  const driverMatch = text.match(/(?:motorista|condutor)\s*(?:é|foi|será|chamado|de nome)?\s*([a-zA-ZÀ-ÿ\s]{3,35}?)(?=\s*(?:,|placa|levando|indo|destino|empresa|com carga|$))/i);
+  // 5. Motorista
+  // a) Procura primeiro se falou "motorista [Nome]" ou "condutor [Nome]"
+  const driverMatch = working.match(/\b(?:motorista|condutor)\s*(?:é|de\s+nome)?\s*([a-zA-ZÀ-ÿ\s]{3,30}?)(?=\s*(?:,|\bplaca\b|\btá\b|\bta\b|\besta\b|\bestá\b|\blevando\b|\bcom\b|\bvai\b|\bdestino\b|\d|$))/i);
   if (driverMatch && driverMatch[1]) {
     result.motorista = driverMatch[1].trim().replace(/\b\w/g, c => c.toUpperCase());
-  }
-
-  // 4. Empresa / Transportadora
-  if (raw.includes('gel') || raw.includes('própria') || raw.includes('propria')) {
-    result.empresa = 'GEL Engenharia';
+    phrasesToRemove.push(driverMatch[0]);
   } else {
-    const empMatch = text.match(/(?:empresa|transportadora)\s*(?:é|da)?\s*([a-zA-ZÀ-ÿ0-9\s]{3,25}?)(?=\s*(?:,|placa|motorista|levando|indo|destino|$))/i);
-    if (empMatch && empMatch[1]) {
-      result.empresa = empMatch[1].trim();
+    // b) Se a frase começou direto com o nome do motorista antes da placa ou ação:
+    // Ex: "Eduardo Francisco placa ABC1D310..."
+    const beforeActionMatch = working.match(/^\s*([A-ZÀ-ÿa-zà-ÿ]{3,15}\s+[A-ZÀ-ÿa-zà-ÿ]{3,15})\s+(?:placa|com\s+a\s+placa|saiu|vai|levando)/i);
+    if (beforeActionMatch) {
+      result.motorista = beforeActionMatch[1].trim().replace(/\b\w/g, c => c.toUpperCase());
+      phrasesToRemove.push(beforeActionMatch[1]);
+    } else {
+      // c) Cruza com a lista de motoristas já cadastrados no sistema
+      for (const v of knownVehicles) {
+        if (v.motorista && working.toLowerCase().includes(v.motorista.toLowerCase())) {
+          result.motorista = v.motorista;
+          phrasesToRemove.push(v.motorista);
+          break;
+        }
+      }
     }
   }
 
-  // 5. Destino
-  const destMatch = text.match(/(?:destino|indo para|para o|para a|com destino a)\s*([a-zA-ZÀ-ÿ0-9\s]{3,40}?)(?=\s*(?:,|levando|placa|motorista|com carga|$))/i);
-  if (destMatch && destMatch[1]) {
-    result.destino = destMatch[1].trim();
+  // Se identificou a placa mas não achou o motorista, tenta cruzar com veículos cadastrados
+  if (!result.motorista && result.placa && knownVehicles && knownVehicles.length > 0) {
+    const cleanP = result.placa.replace(/[^A-Z0-9]/g, '');
+    const matchedV = knownVehicles.find(v => v.placa && v.placa.replace(/[^A-Z0-9]/g, '') === cleanP);
+    if (matchedV && matchedV.motorista) {
+      result.motorista = matchedV.motorista;
+    }
   }
 
-  // 6. Itens / Materiais
-  // Padrões como: "50 sacos de cimento", "10 barras de aço", "3 viagens de brita", "100 tubos"
-  const itemRegex = /(\d+(?:[.,]\d+)?)\s*(sacos?|sc|barras?|metros?\s*cúbicos?|m³|unidades?|un|peças?|pç|tambores?|tb|fardos?|fd|toneladas?|ton|caixas?|cx)?\s*(?:de\s+)?([a-zA-ZÀ-ÿ0-9\s/.-]{3,40}?)(?=(?:,|\be\b|\bcom\b|\bmais\b|\bitem\b|$))/gi;
+  // 6. Extração de Materiais (com MASCARAMENTO de tudo que já foi extraído!)
+  let cargoClean = working;
+  for (const phrase of phrasesToRemove) {
+    if (phrase && phrase.trim()) {
+      cargoClean = cargoClean.replace(phrase, ' ');
+    }
+  }
 
-  let match;
-  while ((match = itemRegex.exec(text)) !== null) {
-    const rawQty = match[1].replace(',', '.');
-    const rawUnit = (match[2] || '').toLowerCase().trim();
-    const rawMat = match[3].trim();
+  // Remove verbos parasitas de transporte
+  cargoClean = cargoClean.replace(/\b(?:tá|ta|esta|está|vai|foi|saiu|saindo|com\s+a)?\s*(?:levando|carregando|transportando|com\s+carga\s+de|com\s+carga|saída\s+de|saiu\s+com|com)\b/gi, ' ');
 
-    if (rawMat.length > 2) {
+  // Normaliza números ("três sacos" -> "3 sacos")
+  cargoClean = normalizeNumbersInText(cargoClean);
+
+  const unitPatterns = '(?:sacos?|scs?|sc|sacas?|barras?|peças?|pçs?|pcs?|pç|pc|unidades?|un|metros?\\s*cúbicos?|m3|m³|metros?|m\\b|quilos?|kg|toneladas?|ton|caixas?|cx|cxs?|tambores?|tb|fardos?|fd|latas?|galões?|galão|litros?|l\\b|tubos?)';
+  const itemRegex = new RegExp(`(\\d+(?:[.,]\\d+)?)\\s*(${unitPatterns})?\\s*(?:de\\s+)?([a-zA-ZÀ-ÿ0-9\\s/.-]{2,35}?)(?=(?:,|\\be\\b|\\bmais\\b|\\d+|$)|\$)`, 'gi');
+
+  let m;
+  while ((m = itemRegex.exec(cargoClean)) !== null) {
+    const rawQty = m[1].replace(',', '.');
+    const rawUnit = (m[2] || '').toLowerCase().trim();
+    let rawMat = m[3].trim().replace(/^(?:de\s+)/i, '').replace(/[,.;]$/, '').trim();
+
+    if (rawMat.length >= 2 && !/^(?:e|mais|com|para)$/i.test(rawMat)) {
       let unit = 'un';
-      if (rawUnit.includes('saco') || rawUnit === 'sc') unit = 'sc';
-      else if (rawUnit.includes('barra')) unit = 'barra';
-      else if (rawUnit.includes('metro') || rawUnit === 'm³') unit = 'm³';
-      else if (rawUnit.includes('peça') || rawUnit === 'pç') unit = 'pç';
-      else if (rawUnit.includes('tambor') || rawUnit === 'tb') unit = 'tb';
-      else if (rawUnit.includes('fardo') || rawUnit === 'fd') unit = 'fd';
-      else if (rawUnit.includes('tonelada') || rawUnit === 'ton') unit = 'ton';
-      else if (rawUnit.includes('caixa') || rawUnit === 'cx') unit = 'cx';
-      else if (rawUnit.includes('quilo') || rawUnit.includes('kg')) unit = 'kg';
+      if (/saco|sc|saca/i.test(rawUnit)) unit = 'sc';
+      else if (/barra/i.test(rawUnit)) unit = 'barra';
+      else if (/cúbico|cubico|m3|m³/i.test(rawUnit)) unit = 'm³';
+      else if (/peça|pç|pc/i.test(rawUnit)) unit = 'pç';
+      else if (/tambor/i.test(rawUnit)) unit = 'tb';
+      else if (/fardo|fd/i.test(rawUnit)) unit = 'fd';
+      else if (/tonelada|ton/i.test(rawUnit)) unit = 'ton';
+      else if (/caixa|cx/i.test(rawUnit)) unit = 'cx';
+      else if (/quilo|kg/i.test(rawUnit)) unit = 'kg';
+      else if (/metro|m\b/i.test(rawUnit)) unit = 'm';
+      else if (/lata|galão|litro|l\b/i.test(rawUnit)) unit = 'l';
+      else if (/tubo/i.test(rawUnit)) {
+        unit = 'un';
+        if (!/tubo/i.test(rawMat)) rawMat = `Tubo de ${rawMat}`;
+      }
 
       result.itens.push({
         id: Date.now() + Math.random(),
@@ -123,13 +253,13 @@ export function parseSpokenTextLocally(text) {
     }
   }
 
-  // Se não achou materiais formatados mas tem texto
-  if (result.itens.length === 0 && raw.includes('levando')) {
-    const afterLevando = text.split(/levando/i)[1];
-    if (afterLevando) {
+  // Fallback caso sobrou texto sem número explícito
+  if (result.itens.length === 0) {
+    const fallbackMat = cargoClean.trim().replace(/\s+/g, ' ');
+    if (fallbackMat.length >= 2) {
       result.itens.push({
         id: Date.now(),
-        material: afterLevando.trim(),
+        material: fallbackMat.replace(/\b\w/g, c => c.toUpperCase()),
         quantidade: 1,
         unidade: 'un',
         observacao: ''
@@ -141,10 +271,10 @@ export function parseSpokenTextLocally(text) {
 }
 
 /**
- * Processa a fala com a API do Google Gemini 1.5 Flash (A melhor precisão do mundo)
+ * Processa a fala com a API do Google Gemini 1.5 Flash
  * Se não houver chave ou der erro de rede, utiliza o Parser Local Inteligente como contingência.
  */
-export async function parseSpokenRomaneioWithGemini(spokenText, currentOrigem = 'UHE Estrela') {
+export async function parseSpokenRomaneioWithGemini(spokenText, currentOrigem = 'UHE Estrela', knownVehicles = []) {
   if (!spokenText || !spokenText.trim()) {
     throw new Error('Nenhum texto de voz informado.');
   }
@@ -153,8 +283,8 @@ export async function parseSpokenRomaneioWithGemini(spokenText, currentOrigem = 
 
   // Se o usuário não configurou a chave da API Gemini, executa o parser local inteligente
   if (!apiKey) {
-    console.log('ℹ️ Usando Parser Local Inteligente (Configure a chave do Gemini para IA avançada)');
-    const localParsed = parseSpokenTextLocally(spokenText);
+    console.log('ℹ️ Usando Parser Local Inteligente Avançado');
+    const localParsed = parseSpokenTextLocally(spokenText, knownVehicles);
     return {
       ...localParsed,
       usedEngine: 'local_nlp'
@@ -166,13 +296,13 @@ Sua função é receber uma frase falada por um conferente da portaria e extrair
 
 Regras Estritas de Extração:
 1. "origem": deve ser exatamente "UHE Estrela" ou "PCH Taboca". Se o usuário não citar, mantenha "${currentOrigem}".
-2. "motorista": Nome completo do motorista (capitalizado).
-3. "placa": Placa do veículo. Converta falas soletradas (ex: "bê érre á dois é dezenove", "bra 2 e 19") no formato padrão Mercosul (ex: "BRA2E19") ou antigo (ex: "ABC-1234"). Retorne sempre em letras maiúsculas e sem espaços.
+2. "motorista": Nome completo do motorista (capitalizado, ex: "Eduardo Francisco", "Carlos Silva"). Se citado antes da placa ou sem a palavra motorista, identifique o nome da pessoa.
+3. "placa": Placa do veículo. Converta falas soletradas (ex: "bê érre á dois é dezenove", "bra 2 e 19", "ABC1D310", "abc 1 d 31") no formato padrão Mercosul (ex: "ABC1D31") ou antigo (ex: "ABC-1234"). Retorne sempre em letras maiúsculas e sem espaços.
 4. "empresa": Nome da transportadora ou empresa. Se falar "gel" ou "própria", coloque "GEL Engenharia".
 5. "destino": Local para onde a carga está sendo enviada (ex: "Frente de Barragem", "Almoxarifado Central", "Oficina Mecânica").
 6. "itens": Lista de materiais. Para cada item:
-   - "material": Nome padronizado do material (ex: "Cimento CP-II", "Barra de Aço CA-50 12mm", "Tubo PVC 100mm").
-   - "quantidade": Número (ex: 50, 10.5).
+   - "material": Nome padronizado do material (ex: "Cimento CP-II", "Barra de Aço CA-50", "Tubo PVC 100mm"). Remova palavras como "levando", "tá levando", "carga de".
+   - "quantidade": Número (ex: se falado "três sacos", quantidade é 3; se falado "dez barras", quantidade é 10).
    - "unidade": Unidade de medida correspondente: "un", "kg", "m³", "sc", "barra", "pç", "tb", "fd", "ton", "cx".
    - "observacao": Nota fiscal, lote ou detalhe citado para o item, ou vazio "".
 7. "observacoes_gerais": Qualquer detalhe adicional da liberação.
@@ -181,12 +311,12 @@ Formato de Resposta Obrigatório:
 Retorne APENAS um objeto JSON válido, sem crases de código e sem texto antes ou depois, seguindo esta estrutura:
 {
   "origem": "UHE Estrela",
-  "motorista": "Carlos Eduardo Silva",
-  "placa": "BRA2E19",
+  "motorista": "Eduardo Francisco",
+  "placa": "ABC1D31",
   "empresa": "GEL Engenharia",
   "destino": "Frente de Barragem",
   "itens": [
-    { "material": "Cimento CP-II 50kg", "quantidade": 50, "unidade": "sc", "observacao": "" }
+    { "material": "Cimento CP-II", "quantidade": 3, "unidade": "sc", "observacao": "" }
   ],
   "observacoes_gerais": ""
 }`;
@@ -245,11 +375,11 @@ Retorne APENAS um objeto JSON válido, sem crases de código e sem texto antes o
     };
   } catch (err) {
     console.warn('⚠️ Falha na API do Gemini, acionando contingência do Parser Local:', err);
-    const fallbackParsed = parseSpokenTextLocally(spokenText);
+    const fallbackParsed = parseSpokenTextLocally(spokenText, knownVehicles);
     return {
       ...fallbackParsed,
       usedEngine: 'local_nlp_fallback',
-      warning: `Gemini indisponível (${err.message}). Processado pelo motor local.`
+      warning: `Gemini indisponível (${err.message}). Processado pelo motor local inteligente.`
     };
   }
 }

@@ -26,6 +26,7 @@ export default function VoiceAssistantModal({
   isOpen, 
   onClose, 
   currentOrigem = 'UHE Estrela',
+  vehiclesList = [],
   onApplyVoiceData 
 }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -149,7 +150,7 @@ export default function VoiceAssistantModal({
     setErrorMessage('');
 
     try {
-      const data = await parseSpokenRomaneioWithGemini(textToProcess, currentOrigem);
+      const data = await parseSpokenRomaneioWithGemini(textToProcess, currentOrigem, vehiclesList);
       setExtractedResult(data);
     } catch (err) {
       setErrorMessage('Erro ao analisar com IA: ' + err.message);
@@ -301,31 +302,42 @@ export default function VoiceAssistantModal({
                 </p>
               </div>
 
-              {/* Caixa de Texto da Transcrição em Tempo Real */}
+              {/* Caixa de Texto da Transcrição em Tempo Real / Editável */}
               <div className="w-full mt-4 text-left">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1 flex items-center justify-between">
-                  <span>Texto Reconhecido:</span>
+                  <span>{isRecording ? 'Ouvindo e Transcrevendo:' : 'Texto Transcrito (Editável):'}</span>
                   {(transcript || interimTranscript) && (
                     <button
                       type="button"
                       onClick={() => { setTranscript(''); setInterimTranscript(''); }}
-                      className="text-slate-400 hover:text-slate-700 text-[10px] font-bold"
+                      className="text-slate-400 hover:text-rose-600 text-[10px] font-bold cursor-pointer"
                     >
-                      Limpar
+                      Limpar Texto
                     </button>
                   )}
                 </label>
-                <div className="p-3 bg-white border-2 border-slate-300 rounded-xl min-h-[70px] text-sm text-slate-900 font-medium">
-                  {transcript || interimTranscript ? (
-                    <span>
-                      {transcript} <span className="text-amber-600 italic font-semibold">{interimTranscript}</span>
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 italic">
-                      Sua fala aparecerá aqui em tempo real...
-                    </span>
-                  )}
-                </div>
+                
+                {isRecording ? (
+                  <div className="p-3 bg-white border-2 border-amber-400 rounded-xl min-h-[75px] text-sm text-slate-900 font-medium shadow-inner">
+                    {transcript || interimTranscript ? (
+                      <span>
+                        {transcript} <span className="text-amber-600 italic font-semibold">{interimTranscript}</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 italic">
+                        Fale agora... Sua fala aparecerá aqui em tempo real...
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <textarea
+                    rows={3}
+                    value={transcript}
+                    onChange={(e) => setTranscript(e.target.value)}
+                    placeholder="Digite ou fale: Ex: Eduardo Francisco placa ABC1D31 levando 3 sacos de cimento..."
+                    className="w-full p-3 bg-white border-2 border-slate-300 focus:border-amber-500 rounded-xl text-sm text-slate-900 font-medium focus:ring-2 focus:ring-amber-200 outline-none transition"
+                  />
+                )}
               </div>
 
               {/* Botão de Processar */}
