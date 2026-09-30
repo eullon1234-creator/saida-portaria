@@ -83,7 +83,7 @@ export default function App() {
       { id: 1, material: '', quantidade: '', unidade: 'un', observacao: '' }
     ],
     observacoes_gerais: '',
-    conferente_portaria: 'Portaria Principal'
+    conferente_portaria: 'Almoxarifado'
   });
 
   // Carrega dados iniciais
@@ -139,7 +139,7 @@ export default function App() {
         { id: Date.now(), material: '', quantidade: '', unidade: 'un', observacao: '' }
       ],
       observacoes_gerais: '',
-      conferente_portaria: 'Portaria Principal'
+      conferente_portaria: 'Almoxarifado'
     });
   };
 

@@ -167,11 +167,11 @@ export default function PrintModal({ romaneio, onClose, onNewRomaneio }) {
         {/* CAMPOS DE ASSINATURA FÍSICA / DIGITAL */}
         <div className="pt-2 border-t border-slate-400">
           <div className="grid grid-cols-2 gap-6 text-center">
-            {/* Assinatura Conferente */}
+            {/* Assinatura Almoxarifado */}
             <div>
               <div className="border-b-2 border-slate-900 h-7 mx-4"></div>
               <div className="text-[10px] font-black uppercase text-slate-900 mt-1">
-                Assinatura do Conferente / Portaria
+                Assinatura do Almoxarifado
               </div>
               <div className="text-[9px] text-slate-500 font-semibold">
                 GEL Engenharia - {romaneio.origem}

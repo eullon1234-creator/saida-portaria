@@ -26,7 +26,7 @@ export function exportRomaneiosToExcel(romaneios, filenamePrefix = 'relatorio_sa
     'Unidade de Medida',
     'Observações do Item / NF',
     'Observações Gerais da Liberação',
-    'Conferente Portaria'
+    'Almoxarifado'
   ];
 
   // Linhas de dados
@@ -72,7 +72,7 @@ export function exportRomaneiosToExcel(romaneios, filenamePrefix = 'relatorio_sa
         escapeCell(it.unidade || ''),
         escapeCell(it.observacao || ''),
         escapeCell(rom.observacoes_gerais || ''),
-        escapeCell(rom.conferente_portaria || 'Portaria')
+        escapeCell(rom.conferente_portaria || 'Almoxarifado')
       ].join(';'));
     });
   });
