@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Search,
   Check,
-  FileText
+  FileText,
+  Mic
 } from 'lucide-react';
 import { formatPlate, cleanPlate, isValidPlate } from '../utils/plateUtils';
 
@@ -28,6 +29,7 @@ export default function RomaneioForm({
   vehiclesList,
   onSaveAndPrint,
   onPrintBlank,
+  onOpenVoice,
   onResetForm
 }) {
   const [plateSuggestions, setPlateSuggestions] = useState([]);
@@ -222,6 +224,37 @@ export default function RomaneioForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* BANNER DE PREENCHIMENTO RÁPIDO POR VOZ (IA) */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white rounded-2xl p-4 sm:p-5 shadow-lg border-2 border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
+            <Mic className="w-6 h-6 stroke-[2.5]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
+                Preenchimento Rápido por Voz com IA
+              </h3>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-slate-950">
+                Novo
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5 font-medium">
+              Fale o motorista, placa, destino e materiais de uma vez só. A IA extrai e preenche tudo automaticamente!
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenVoice}
+          className="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+        >
+          <Mic className="w-4 h-4 fill-slate-950" />
+          <span>Falar Romaneio com IA</span>
+        </button>
+      </div>
+
       {/* 2. DADOS DO TRANSPORTE E MOTORISTA */}
       <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200">
         <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">

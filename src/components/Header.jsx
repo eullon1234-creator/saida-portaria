@@ -1,4 +1,4 @@
-import { Truck, History, Database, Users, PlusCircle, CheckCircle2, CloudOff, Download, Smartphone, FileText } from 'lucide-react';
+import { Truck, History, Database, Users, PlusCircle, CheckCircle2, CloudOff, Download, Smartphone, FileText, Mic, Sparkles } from 'lucide-react';
 import { isUsingFirebase } from '../firebase';
 import logoGel from '../assets/logo-gel.png';
 
@@ -7,6 +7,7 @@ export default function Header({
   onOpenVehicles, 
   onOpenFirebase, 
   onOpenInstall,
+  onOpenVoice,
   onPrintBlank,
   onNewRomaneio,
   romaneiosCount = 0 
@@ -50,11 +51,23 @@ export default function Header({
 
         {/* Botões de Ação Rápida */}
         <div className="flex items-center gap-2 flex-wrap ml-auto">
+          {/* Botão Preencher por Voz (IA) */}
+          <button
+            onClick={onOpenVoice}
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 transition active:scale-95 shadow-md border border-amber-200 cursor-pointer"
+            title="Preencher romaneio falando ao microfone com Inteligência Artificial"
+          >
+            <Mic className="w-4 h-4 text-slate-950" />
+            <span className="hidden sm:inline">Preencher por Voz</span>
+            <span className="sm:hidden">Voz IA</span>
+          </button>
+
           {/* Botão Baixar / Instalar App */}
           <button
             onClick={onOpenInstall}
             type="button"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 transition active:scale-95 shadow-md border border-amber-300 animate-pulse hover:animate-none cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-black bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition active:scale-95 shadow-sm cursor-pointer"
             title="Baixar e Instalar Aplicativo no Celular ou Tablet"
           >
             <Download className="w-4 h-4 stroke-[2.5]" />

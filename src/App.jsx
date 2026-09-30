@@ -7,6 +7,7 @@ import HistoryModal from './components/HistoryModal';
 import VeiculosModal from './components/VeiculosModal';
 import FirebaseModal from './components/FirebaseModal';
 import InstallPromptModal from './components/InstallPromptModal';
+import VoiceAssistantModal from './components/VoiceAssistantModal';
 import { 
   getAllVehiclesDrivers, 
   getAllRomaneios, 
@@ -14,7 +15,7 @@ import {
   deleteRomaneioById,
   isUsingFirebase 
 } from './firebase';
-import { generateRomaneioNumber } from './utils/plateUtils';
+import { generateRomaneioNumber, formatPlate } from './utils/plateUtils';
 import { ShieldCheck, HardHat, FileSpreadsheet, Sparkles, Download, Smartphone, X } from 'lucide-react';
 
 function getNowLocalDateTime() {
@@ -34,6 +35,7 @@ export default function App() {
   const [isVehiclesModalOpen, setIsVehiclesModalOpen] = useState(false);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [showMobileInstallBanner, setShowMobileInstallBanner] = useState(true);
   const [selectedRomaneioToPrint, setSelectedRomaneioToPrint] = useState(null);
 
@@ -183,6 +185,38 @@ export default function App() {
     setIsPrintModalOpen(true);
   };
 
+  // Aplicar dados extraídos por Voz com IA
+  const handleApplyVoiceData = (extractedData) => {
+    if (!extractedData) return;
+
+    if (extractedData.origem && (extractedData.origem.includes('Estrela') || extractedData.origem.includes('Taboca'))) {
+      handleOrigemChange(extractedData.origem);
+    }
+
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        motorista: extractedData.motorista || prev.motorista,
+        placa: extractedData.placa ? formatPlate(extractedData.placa) : prev.placa,
+        empresa: extractedData.empresa || prev.empresa,
+        destino: extractedData.destino || prev.destino,
+        observacoes_gerais: extractedData.observacoes_gerais || prev.observacoes_gerais
+      };
+
+      if (extractedData.itens && extractedData.itens.length > 0) {
+        updated.itens = extractedData.itens.map((item, idx) => ({
+          id: Date.now() + idx,
+          material: item.material || '',
+          quantidade: item.quantidade !== undefined && item.quantidade !== null ? String(item.quantidade) : '',
+          unidade: item.unidade || 'un',
+          observacao: item.observacao || ''
+        }));
+      }
+
+      return updated;
+    });
+  };
+
   // Excluir romaneio
   const handleDeleteRomaneio = async (id) => {
     await deleteRomaneioById(id);
@@ -198,6 +232,7 @@ export default function App() {
         onOpenVehicles={() => setIsVehiclesModalOpen(true)}
         onOpenFirebase={() => setIsFirebaseModalOpen(true)}
         onOpenInstall={() => setIsInstallModalOpen(true)}
+        onOpenVoice={() => setIsVoiceModalOpen(true)}
         onPrintBlank={handlePrintBlank}
         onNewRomaneio={handleResetForm}
         romaneiosCount={romaneiosList.length}
@@ -268,6 +303,7 @@ export default function App() {
           vehiclesList={vehiclesList}
           onSaveAndPrint={handleSaveAndPrint}
           onPrintBlank={handlePrintBlank}
+          onOpenVoice={() => setIsVoiceModalOpen(true)}
           onResetForm={handleResetForm}
         />
       </main>
@@ -316,6 +352,14 @@ export default function App() {
         onClose={() => setIsInstallModalOpen(false)}
         deferredPrompt={deferredPrompt}
         onInstallSuccess={() => setIsInstalled(true)}
+      />
+
+      {/* MODAL DE ASSISTENTE DE VOZ COM IA */}
+      <VoiceAssistantModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        currentOrigem={origem}
+        onApplyVoiceData={handleApplyVoiceData}
       />
 
       {/* Rodapé institucional */}
